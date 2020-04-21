@@ -15,7 +15,9 @@ const Ingredients = () => {
   };
   const removeIngredients = id => {
     const newIngredients = [...userIngredients].slice(id, 0);
-    setUserIngredients(newIngredients);
+    setUserIngredients(prevIngredients => [
+      ...userIngredients
+    ].slice(id,  ));
   };
 
   return (
