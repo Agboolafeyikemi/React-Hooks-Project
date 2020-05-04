@@ -47,6 +47,7 @@ const Search = React.memo(props => {
             onChange={event => setEnteredFilter(event.target.value)}
           />
         </div>
+        
       </Card>
     </section>
   );
