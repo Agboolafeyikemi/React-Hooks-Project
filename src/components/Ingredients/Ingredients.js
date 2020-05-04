@@ -1,36 +1,77 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
+import ErrorModal from '../UI/ErrorModal';
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
 import Search from "./Search";
 
 const Ingredients = () => {
   const [userIngredients, setUserIngredients] = useState([]);
+  const [isLoading, setLoading] = useState(false);
+  const [error, setError] = useState();
 
-  const addIngredientsHandler = ingredient => {
-    setUserIngredients(prevIngredients => [
-      ...prevIngredients,
-      { id: Math.random().toString(), ...ingredient }
-    ]);
+  useEffect(() => {
+    console.log("RENDERING INGREDIENTS", userIngredients);
+  }, [userIngredients]);
+
+  const filteredIngredientsHandler = useCallback(filteredIngredients => {
+    setUserIngredients(filteredIngredients);
+  }, []);
+
+  const addIngredientHandler = ingredient => {
+    setLoading(true);
+    fetch("https://react-hooks-project-fa3e1.firebaseio.com/ingredients.json", {
+      method: "POST",
+      body: JSON.stringify(ingredient),
+      headers: { "Content-Type": "application/json" }
+    })
+      .then(response => {
+        setLoading(false);
+        return response.json();
+      })
+      .then(responseData => {
+        setUserIngredients(prevIngredients => [
+          ...prevIngredients,
+          { id: responseData.name, ...ingredient }
+        ]);
+      });
   };
-  const removeIngredients = id => {
-    const newIngredients = [...userIngredients].slice(id, 0);
-    setUserIngredients(prevIngredients => [
-      ...userIngredients
-    ].slice(id,  ));
+
+  const removeIngredientHandler = ingredientId => {
+    setLoading(true)
+    fetch(
+      `https://react-hooks-project-fa3e1.firebaseio.com/ingredients/${ingredientId}.json`,
+      {
+        method: "DELETE"
+      }
+    ).then(response => {
+      setLoading(false)
+      setUserIngredients(prevIngredients =>
+        prevIngredients.filter(ingredient => ingredient.id !== ingredientId)
+      );
+    }).catch(error => {
+      setError(error.message)
+      setLoading(false)
+    });
   };
+  const clearError = ()=> {
+    setError(null)
+  }
 
   return (
     <div className="App">
-      <IngredientForm onAddIng={addIngredientsHandler} />
+      {error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
+      <IngredientForm 
+      onAddIngredient={addIngredientHandler}
+      loading = {isLoading}
+      />
 
       <section>
-        <Search />
+        <Search onLoadIngredients={filteredIngredientsHandler} />
         <IngredientList
           ingredients={userIngredients}
-          onRemoveItem={removeIngredients}
+          onRemoveItem={removeIngredientHandler}
         />
-        {/* Need to add list here! */}
       </section>
     </div>
   );
